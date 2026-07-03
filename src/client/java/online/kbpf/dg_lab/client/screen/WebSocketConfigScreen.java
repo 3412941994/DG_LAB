@@ -7,13 +7,12 @@ import online.kbpf.dg_lab.client.Config.ModConfig;
 import online.kbpf.dg_lab.client.entity.NetworkAdapter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -26,84 +25,84 @@ import static online.kbpf.dg_lab.client.screen.ConfigScreen.*;
 public class WebSocketConfigScreen extends Screen {
 
     protected WebSocketConfigScreen() {
-        super(Text.literal("连接配置界面"));
+        super(Component.literal("连接配置界面"));
     }
 
     public ModConfig modConfig = Dg_labClient.modConfig;
-    public ButtonWidget autoStartWebSocketServer;
-    public ButtonWidget createQR;
-    public TextFieldWidget host;
-    public TextFieldWidget port;
-    public TextFieldWidget serverPort;
-    public ButtonWidget host1;
-    public ButtonWidget host2;
-    public ButtonWidget port1;
-    public ButtonWidget serverPort1;
+    public Button autoStartWebSocketServer;
+    public Button createQR;
+    public EditBox host;
+    public EditBox port;
+    public EditBox serverPort;
+    public Button host1;
+    public Button host2;
+    public Button port1;
+    public Button serverPort1;
     private NetworkAdapter network = new NetworkAdapter();
     private LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<>(network.getNetworkMap());
 
     @Override
-    public void close() {
+    public void onClose() {
         Screen configScreen = new ConfigScreen();
-        client.setScreen(configScreen);
+        minecraft.setScreenAndShow(configScreen);
 
     }
 
     @Override
     protected void init() {
         modConfig = Dg_labClient.modConfig;
-        autoStartWebSocketServer = ButtonWidget.builder(Text.literal("自动启动连接服务器:已" + ((modConfig.getAutoStartWebSocketServer()) ? "开启" : "关闭")), button -> {
+        autoStartWebSocketServer = Button.builder(Component.literal("自动启动连接服务器:已" + ((modConfig.getAutoStartWebSocketServer()) ? "开启" : "关闭")), button -> {
             if (modConfig.getAutoStartWebSocketServer()) {
                 modConfig.setAutoStartWebSocketServer(false);
-                autoStartWebSocketServer.setMessage(Text.literal("自动启动连接服务器:已关闭"));
+                autoStartWebSocketServer.setMessage(Component.literal("自动启动连接服务器:已关闭"));
             } else {
                 modConfig.setAutoStartWebSocketServer(true);
-                autoStartWebSocketServer.setMessage(Text.literal("自动启动连接服务器:已开启"));
+                autoStartWebSocketServer.setMessage(Component.literal("自动启动连接服务器:已开启"));
 
             }
 
-        }).dimensions(width / 2 - (int) (width * 0.41), 20, (int) (width * 0.4), ButtonHeight).tooltip(Tooltip.of(Text.literal("要在客户端启动时自动启动连接服务器\n如果关闭需要使用指令手动启动\n非必要无需关闭"))).build();
+        }).bounds(width / 2 - (int) (width * 0.41), 20, (int) (width * 0.4), ButtonHeight).tooltip(Tooltip.create(Component.literal("要在客户端启动时自动启动连接服务器\n如果关闭需要使用指令手动启动\n非必要无需关闭"))).build();
 
-        createQR = ButtonWidget.builder(Text.literal("创建连接二维码并打开"), button -> {
+        createQR = Button.builder(Component.literal("创建连接二维码并打开"), button -> {
             ToolQR.CreateQR();
-        }).dimensions(width / 2 + 5, 20, (int) (width * 0.4), ButtonHeight).tooltip(Tooltip.of(Text.literal("图片默认生成于此地址:\n" + System.getProperty("user.dir")))).build();
+        }).bounds(width / 2 + 5, 20, (int) (width * 0.4), ButtonHeight).tooltip(Tooltip.create(Component.literal("图片默认生成于此地址:\n" + System.getProperty("user.dir")))).build();
 
-        host = new TextFieldWidget(this.textRenderer, (int) (width * 0.66), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.25), ButtonHeight, Text.literal("Enter address..."));
-        host.setText(modConfig.getAddress());
-        host.setPlaceholder(Text.literal("this").withColor(0xaaaaaa));
-        host.setChangedListener(this::hostText);
-        host1 = ButtonWidget.builder(Text.literal("?"), button -> {
-        }).dimensions((int) (width * 0.63), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.of(Text.literal("扫描二维码连接的地址\n非必要无需修改"))).build();
-        host2 = ButtonWidget.builder(Text.literal("<|>"), button -> {
+        host = new EditBox(this.font, (int) (width * 0.66), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.25), ButtonHeight, Component.literal("Enter address..."));
+        host.setValue(modConfig.getAddress());
+        host.setHint(Component.literal("this").withColor(0xaaaaaa));
+        host.setResponder(this::hostText);
+        host1 = Button.builder(Component.literal("?"), button -> {
+        }).bounds((int) (width * 0.63), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.create(Component.literal("扫描二维码连接的地址\n非必要无需修改"))).build();
+        host2 = Button.builder(Component.literal("<|>"), button -> {
             toggleNetworkAdapter();
-        }).dimensions((int) (width * 0.59), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.04), ButtonHeight).tooltip(Tooltip.of(Text.literal("切换网卡"))).build();
+        }).bounds((int) (width * 0.59), 20 + ButtonHeight + ButtonDistance, (int) (width * 0.04), ButtonHeight).tooltip(Tooltip.create(Component.literal("切换网卡"))).build();
 
-        port = new TextFieldWidget(this.textRenderer, (int) (width * 0.66), 2 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.25), ButtonHeight, Text.literal("Enter port..."));
-        port.setText(String.valueOf(modConfig.getPort()));
-        port.setPlaceholder(Text.literal("9999").withColor(0xaaaaaa));
-        port.setChangedListener(this::portText);
+        port = new EditBox(this.font, (int) (width * 0.66), 2 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.25), ButtonHeight, Component.literal("Enter port..."));
+        port.setValue(String.valueOf(modConfig.getPort()));
+        port.setHint(Component.literal("9999").withColor(0xaaaaaa));
+        port.setResponder(this::portText);
         port.setMaxLength(5);
-        port1 = ButtonWidget.builder(Text.literal("?"), button -> {
-        }).dimensions((int) (width * 0.63), 2 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.of(Text.literal("扫描二维码连接的端口,非服务器端口\n非必要无需修改"))).build();
+        port1 = Button.builder(Component.literal("?"), button -> {
+        }).bounds((int) (width * 0.63), 2 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.create(Component.literal("扫描二维码连接的端口,非服务器端口\n非必要无需修改"))).build();
 
-        serverPort = new TextFieldWidget(this.textRenderer, (int) (width * 0.66), 3 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.25), ButtonHeight, Text.literal("Enter port..."));
-        serverPort.setText(String.valueOf(modConfig.getPort()));
-        serverPort.setPlaceholder(Text.literal("9999").withColor(0xaaaaaa));
-        serverPort.setChangedListener(this::serverPortText);
+        serverPort = new EditBox(this.font, (int) (width * 0.66), 3 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.25), ButtonHeight, Component.literal("Enter port..."));
+        serverPort.setValue(String.valueOf(modConfig.getPort()));
+        serverPort.setHint(Component.literal("9999").withColor(0xaaaaaa));
+        serverPort.setResponder(this::serverPortText);
         serverPort.setMaxLength(5);
-        serverPort1 = ButtonWidget.builder(Text.literal("?"), button -> {
-        }).dimensions((int) (width * 0.63), 3 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.of(Text.literal("服务器对外开放的端口\n非必要无需修改\n修改后请保存重启客户端生效"))).build();
+        serverPort1 = Button.builder(Component.literal("?"), button -> {
+        }).bounds((int) (width * 0.63), 3 * (ButtonHeight + ButtonDistance) + 20, (int) (width * 0.03), ButtonHeight).tooltip(Tooltip.create(Component.literal("服务器对外开放的端口\n非必要无需修改\n修改后请保存重启客户端生效"))).build();
 
 
-        addDrawableChild(createQR);
-        addDrawableChild(autoStartWebSocketServer);
-        addDrawableChild(host);
-        addDrawable(host1);
-        addDrawableChild(host2);
-        addDrawableChild(port);
-        addDrawable(port1);
-        addDrawableChild(serverPort);
-        addDrawable(serverPort1);
+        addRenderableWidget(createQR);
+        addRenderableWidget(autoStartWebSocketServer);
+        addRenderableWidget(host);
+        addRenderableOnly(host1);
+        addRenderableWidget(host2);
+        addRenderableWidget(port);
+        addRenderableOnly(port1);
+        addRenderableWidget(serverPort);
+        addRenderableOnly(serverPort1);
     }
 
 
@@ -135,14 +134,14 @@ public class WebSocketConfigScreen extends Screen {
             else if(isKeyFound){
                 modConfig.setAddress(entry.getValue());
                 modConfig.setNetwork(entry.getKey());
-                host.setText(entry.getValue());
+                host.setValue(entry.getValue());
                 return;
             }
         }
         Map.Entry<String, String> firstEntry = linkedHashMap.entrySet().iterator().next();
         modConfig.setAddress(firstEntry.getValue());
         modConfig.setNetwork(firstEntry.getKey());
-        host.setText(firstEntry.getValue());
+        host.setValue(firstEntry.getValue());
     }
 
     private void portText(String port) {
@@ -173,13 +172,13 @@ public class WebSocketConfigScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.drawTextWithShadow(textRenderer, Text.literal("二维码连接的地址"), (int) (width * 0.1), 49, 0xffffff);
-        context.drawText(textRenderer, Text.literal(modConfig.getNetwork()), (int) (width * 0.1), 61, 0xaaaaaa, false);
-        context.drawTextWithShadow(textRenderer, Text.literal("二维码连接的端口"), (int) (width * 0.1), 74, 0xffffff);
-        context.drawTextWithShadow(textRenderer, Text.literal("服务器开放的端口"), (int) (width * 0.1), 99, 0xffffff);
+        context.text(font, Component.literal("二维码连接的地址"), (int) (width * 0.1), 49, 0xffffff);
+        context.text(font, Component.literal(modConfig.getNetwork()), (int) (width * 0.1), 61, 0xaaaaaa, false);
+        context.text(font, Component.literal("二维码连接的端口"), (int) (width * 0.1), 74, 0xffffff);
+        context.text(font, Component.literal("服务器开放的端口"), (int) (width * 0.1), 99, 0xffffff);
 
 
     }

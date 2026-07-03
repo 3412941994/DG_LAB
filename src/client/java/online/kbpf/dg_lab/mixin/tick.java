@@ -1,12 +1,7 @@
 package online.kbpf.dg_lab.mixin;
 
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 import online.kbpf.dg_lab.client.Config.StrengthConfig;
 import online.kbpf.dg_lab.client.entity.DGStrength;
-import net.minecraft.client.MinecraftClient;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,16 +12,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static online.kbpf.dg_lab.client.Dg_labClient.*;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.server.IntegratedServer;
 
-@Mixin(MinecraftClient.class)
+
+@Mixin(Minecraft.class)
 public abstract class tick {
 
     @Shadow
     public abstract void tick();
 
-    @Shadow @Nullable public ClientPlayerEntity player;
-    @Shadow @Nullable public ClientWorld world;
-    @Shadow @Nullable private IntegratedServer server;
+    @Shadow @Nullable public LocalPlayer player;
+    @Shadow @Nullable public ClientLevel level;
+    @Shadow @Nullable private IntegratedServer singleplayerServer;
     @Unique
     private int tickCounter = 0; // 计数器，用于跟踪游戏刻
     @Unique
@@ -158,18 +158,18 @@ public abstract class tick {
     @Unique
     private void TwoPlayer(){
         if(!twoPlayerMode) return;
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         // 1. 判断是否是单人模式
-        if(!client.isIntegratedServerRunning()) {
+        if(!client.hasSingleplayerServer()) {
             quit2PMode();
             return;
         }
-        IntegratedServer server = client.getServer();
+        IntegratedServer server = client.getSingleplayerServer();
         // 2. 判断是否开启了局域网 (isRemote 在 Yarn 中表示是否公开)
-        if(server != null && server.isRemote()){
+        if(server != null && server.isPublished()){
 
 
-            if (server.getPlayerManager().getPlayer(secondPlayer) == null) {
+            if (server.getPlayerList().getPlayerByName(secondPlayer) == null) {
                 if(Health2P > 0.0F){
                     webSocketServer.sendStrengthToClient((Math.min(webSocketServer.getStrength().getBStrength() + secondPlayerQuitStrength, webSocketServer.getStrength().getBMaxStrength())), 2, 2);
                 }
@@ -177,7 +177,7 @@ public abstract class tick {
                 return;
             }
 
-            float health2P = server.getPlayerManager().getPlayer(secondPlayer).getHealth();
+            float health2P = server.getPlayerList().getPlayerByName(secondPlayer).getHealth();
 
             if (Health2P == -1.0F){
                 Health2P = health2P;

@@ -12,10 +12,9 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
 import javax.imageio.ImageIO;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 
 public class ToolQR {
@@ -26,9 +25,9 @@ public class ToolQR {
         ModConfig modConfig = Dg_labClient.modConfig;
         String ipAddress = modConfig.getAddress();
         if(ipAddress.equals("error")) {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("没有指定的ip地址").withColor(0xFF5555), false);
+                client.player.sendSystemMessage(Component.literal("没有指定的ip地址").withColor(0xFF5555));
             }
         }
         else {

@@ -6,9 +6,9 @@ import online.kbpf.dg_lab.client.entity.DGStrength;
 import online.kbpf.dg_lab.client.Config.StrengthConfig;
 import online.kbpf.dg_lab.client.webSocketServer.webSocketServer;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,17 +18,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
 
-@Mixin(ClientPlayerEntity.class)
-public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity {
+@Mixin(LocalPlayer.class)
+public abstract class ClientPlayerEntityMixin extends AbstractClientPlayer {
 
     @Unique
     float Dg_labHealth = 0.0f;
 
-    public ClientPlayerEntityMixin(ClientWorld world, GameProfile profile) {
+    public ClientPlayerEntityMixin(ClientLevel world, GameProfile profile) {
         super(world, profile);
     }
 
-    @Inject(method = "updateHealth", at = @At("TAIL"))
+    @Inject(method = "hurtTo", at = @At("TAIL"))
     private void afterSetHealth(float health, CallbackInfo ci) {
 //        LivingEntityAccessor accessor = (LivingEntityAccessor) this;
 //        ClientPlayerEntityAccessor accessor1 = (ClientPlayerEntityAccessor) this;
