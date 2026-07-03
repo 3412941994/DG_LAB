@@ -16,7 +16,7 @@ _This mod is developed for Minecraft's Fabric loader, enabling connectivity betw
 1.  Ensure your DG\_LAB device is running version 3.x before use
 2.  High-intensity stimulation parameters should be configured under professional guidance
 
-*   Supports 1.21.11 / 1.21.9 / 1.21.8 / 1.21 / 1.20.1 / 1.19.2 / 1.18.2
+*   Supports 26.1 / 1.21.11 / 1.21.9 / 1.21.8 / 1.21 / 1.20.1 / 1.19.2 / 1.18.2
     
 *   Planned support for 1.16.5
     
@@ -42,7 +42,7 @@ _本模组为《我的世界》Fabric端开发，可实现游戏与DG\_LAB终端
 1.  使用前请确认DG\_LAB终端为3.x版本
 2.  建议在专业指导下配置高强度刺激参数
 
-*   已支持 1.21.11 / 1.21.9 / 1.21.8 / 1.21 / 1.20.1 / 1.19.2 / 1.18.2
+*   已支持 26.2 / 1.21.11 / 1.21.9 / 1.21.8 / 1.21 / 1.20.1 / 1.19.2 / 1.18.2
     
 *   计划中 1.16.5
     
