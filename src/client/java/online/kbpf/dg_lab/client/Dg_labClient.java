@@ -1,25 +1,24 @@
 package online.kbpf.dg_lab.client;
 
+import online.kbpf.dg_lab.Dg_lab;
 import online.kbpf.dg_lab.client.Tool.DGWaveformTool;
 import online.kbpf.dg_lab.client.command.Default;
 import online.kbpf.dg_lab.client.Config.ModConfig;
 import online.kbpf.dg_lab.client.Config.StrengthConfig;
 import online.kbpf.dg_lab.client.Config.WaveformConfig;
 import online.kbpf.dg_lab.client.entity.Waveform.Waveform;
+import online.kbpf.dg_lab.client.hud.hud;
 import online.kbpf.dg_lab.client.screen.ConfigScreen;
 import online.kbpf.dg_lab.client.webSocketServer.webSocketServer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.net.InetSocketAddress;
@@ -37,8 +36,12 @@ public class Dg_labClient implements ClientModInitializer {
     public static String secondPlayer = "null";
     public static int secondPlayerQuitStrength = 200;
 
-    private static KeyBinding keyBinding;
+    private static KeyMapping keyBinding;
     private final Screen configScreen = new ConfigScreen();
+
+    private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(Dg_lab.MODID, "strength_hud");
+    private static final KeyMapping.Category KEY_CATEGORY =
+            KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Dg_lab.MODID, "main"));
 
 
 
@@ -55,78 +58,26 @@ public class Dg_labClient implements ClientModInitializer {
 
         DGWaveformTool.updateDuration();
 
-        HudRenderCallback.EVENT.register(this::onHudRender);
+        //屏幕强度显示（渲染在所有原版 HUD 元素之后，并跟随 F1 隐藏）
+        HudElementRegistry.attachElementAfter(VanillaHudElements.SUBTITLES, HUD_ID, new hud());
 
-        keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        keyBinding = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "打开配置界面",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_O,
-                "DG_LAB"
+                KEY_CATEGORY
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (keyBinding.wasPressed()) {
+            while (keyBinding.consumeClick()) {
 
-                client.setScreen(configScreen);
+                client.gui.setScreen(configScreen);
             }
         });
         //指令定义
         Default.register(modConfig, strengthConfig, webSocketServer);
 
         if(modConfig.getAutoStartWebSocketServer()) webSocketServer.start();
-    }
-
-
-
-    //屏幕强度显示
-    private void onHudRender(DrawContext drawContext, RenderTickCounter tickDelta) {
-        MinecraftClient client = MinecraftClient.getInstance();
-
-        if (client.player != null && client.world != null && (modConfig.getRenderingPositionX() < client.getWindow().getScaledWidth() || modConfig.getRenderingPositionY() < client.getWindow().getScaledHeight())) {
-            // 假设强度数值是一个整数
-//            int strengthValue = getStrengthValue(client.player);
-
-            // 计算图标和文本的位置
-            int x = modConfig.getRenderingPositionX();
-            int y = modConfig.getRenderingPositionY();
-
-
-            // 创建并渲染 OrderedText
-
-            if(webSocketServer.getConnected()) {
-                Text strengthText;
-                Text strengthText1;
-                String A = "A", B = "B";
-                if(twoPlayerMode){
-                    A = MinecraftClient.getInstance().getSession().getUsername() + ":";
-                    B = secondPlayer + ":";
-                }
-                else {
-                    A = "A:";
-                    B = "B:";
-                }
-                if(modConfig.isRenderingMax()) {
-                    strengthText = Text.literal(A + webSocketServer.getStrength().getAStrength() + ",Max:" + webSocketServer.getStrength().getAMaxStrength());
-
-                    strengthText1 = Text.literal(B + webSocketServer.getStrength().getBStrength() + ",Max:" + webSocketServer.getStrength().getBMaxStrength());
-
-                }
-                else {
-                    strengthText = Text.literal(A + webSocketServer.getStrength().getAStrength());
-
-                    strengthText1 = Text.literal(B + webSocketServer.getStrength().getBStrength());
-                }
-                OrderedText orderedText = strengthText.asOrderedText();
-                OrderedText orderedText1 = strengthText1.asOrderedText();
-                drawContext.drawTextWithShadow(client.textRenderer, orderedText, x, y, 0xFFFFFF);
-                drawContext.drawTextWithShadow(client.textRenderer, orderedText1, x, y + 9, 0xFFFFFF);
-            }
-            else {
-                Text strengthText = Text.literal("未连接");
-                OrderedText orderedText = strengthText.asOrderedText();
-                drawContext.drawTextWithShadow(client.textRenderer, orderedText, x, y, 0xFF0000);
-            }
-        }
     }
 
 
